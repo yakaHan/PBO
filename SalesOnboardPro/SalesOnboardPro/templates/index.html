@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-12">
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ stats.total }}</h4>
+                                <p class="card-text">Total Tasks</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-tasks fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ stats.completed }}</h4>
+                                <p class="card-text">Completed</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ stats.active }}</h4>
+                                <p class="card-text">Active</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">{{ stats.completion_rate }}%</h4>
+                                <p class="card-text">Completion Rate</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-chart-pie fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Task Form -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Add New Task
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_task_form') }}" id="addTaskForm">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Task Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                placeholder="Enter training task or onboarding step..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus me-2"></i>Add Task
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Management -->
+    <div class="col-lg-8 col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list-check me-2"></i>Training Tasks
+                </h5>
+                <div class="btn-group" role="group" id="filterButtons">
+                    <input type="radio" class="btn-check" name="filter" id="filterAll" value="all" checked>
+                    <label class="btn btn-outline-primary btn-sm" for="filterAll">All</label>
+                    
+                    <input type="radio" class="btn-check" name="filter" id="filterActive" value="active">
+                    <label class="btn btn-outline-warning btn-sm" for="filterActive">Active</label>
+                    
+                    <input type="radio" class="btn-check" name="filter" id="filterCompleted" value="completed">
+                    <label class="btn btn-outline-success btn-sm" for="filterCompleted">Completed</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="tasksContainer">
+                    {% if tasks %}
+                        {% for task in tasks %}
+                        <div class="task-item border rounded p-3 mb-3 {{ 'task-completed' if task.completed else 'task-active' }}" 
+                             data-task-id="{{ task.id }}" data-status="{{ 'completed' if task.completed else 'active' }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="form-check flex-grow-1 me-3">
+                                    <input class="form-check-input task-checkbox" type="checkbox" 
+                                           {{ 'checked' if task.completed else '' }}
+                                           onchange="toggleTask({{ task.id }})">
+                                    <label class="form-check-label flex-grow-1">
+                                        <span class="task-description {{ 'text-decoration-line-through text-muted' if task.completed else '' }}">
+                                            {{ task.description }}
+                                        </span>
+                                        <small class="text-muted d-block">
+                                            Created: {{ task.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </label>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-primary" onclick="editTask({{ task.id }}, '{{ task.description|e }}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteTask({{ task.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5" id="emptyState">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No training tasks yet</h5>
+                            <p class="text-muted">Add your first onboarding or training task to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div class="modal fade" id="editTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" id="editTaskId">
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Task Description</label>
+                        <textarea class="form-control" id="editDescription" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveTaskEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden forms for server-side actions -->
+<div style="display: none;">
+    <form id="toggleForm" method="POST" action="">
+        <input type="submit">
+    </form>
+    <form id="deleteForm" method="POST" action="">
+        <input type="submit">
+    </form>
+</div>
+{% endblock %}
